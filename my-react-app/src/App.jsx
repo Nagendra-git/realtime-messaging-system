@@ -10,7 +10,7 @@ function App() {
         {publicRoutes.map((route) => (
           <Route element={<PublicRoutes />} key={route.path}>  {/* ✅ key added */}
             <Route path={route.path} element={route.component} /> {/* ✅ no double-slash */}
-          </Route>
+          </Route>  
         ))}
       </Routes>
     </Router>

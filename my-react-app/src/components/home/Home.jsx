@@ -1,11 +1,30 @@
 import { useState, useEffect } from "react";
-import { Client } from "@stomp/stompjs"; // ✅ only this import needed
+import { Client } from "@stomp/stompjs";
+import "./Home.css"; // ✅ import CSS file
+
+function StatusBadge({ status }) {
+  const classMap = {
+    Completed: "status-completed",
+    Progress:  "status-progress",
+    Pending:   "status-pending",
+    Failed:    "status-failed",
+  };
+  const badgeClass = classMap[status] || "status-pending";
+
+  return (
+    <span className={`status-badge ${badgeClass}`}>
+      {status}
+    </span>
+  );
+}
 
 function Home() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
+
+
 
   // ✅ REST fetch
   useEffect(() => {
@@ -24,18 +43,14 @@ function Home() {
       });
   }, []);
 
-  // ✅ WebSocket - no SockJS
+  // ✅ WebSocket
   useEffect(() => {
     const client = new Client({
-      brokerURL: "ws://localhost:8080/ws", // ✅ ws:// instead of http://
+      brokerURL: "ws://localhost:8080/ws",
       onConnect: () => {
         setConnected(true);
-        console.log("WebSocket Connected");
-
         client.subscribe("/topic/ai-status", (message) => {
           const updatedStatus = JSON.parse(message.body);
-          console.log("WS update received:", updatedStatus);
-
           setData((prevData) =>
             prevData.map((item) =>
               item.id === updatedStatus.id ? updatedStatus : item
@@ -43,17 +58,11 @@ function Home() {
           );
         });
       },
-      onDisconnect: () => {
-        setConnected(false);
-        console.log("WebSocket Disconnected");
-      },
-      onStompError: (frame) => {
-        console.error("WebSocket Error:", frame);
-      },
+      onDisconnect: () => setConnected(false),
+      onStompError: (frame) => console.error("WebSocket Error:", frame),
     });
 
     client.activate();
-
     return () => client.deactivate();
   }, []);
 
@@ -61,26 +70,35 @@ function Home() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div>
-      <p>WebSocket: {connected ? "🟢 Connected" : "🔴 Disconnected"}</p>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Job ID</th>
-            <th>Title</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id}>
-              <td>{item.id}</td>
-              <td>{item.title}</td>
-              <td>{item.status}</td>
+    <div className="container">
+      <div className="header">
+        <h2 className="title">AI Generated Status</h2>
+        <span className={`badge ${connected ? "badge-connected" : "badge-disconnected"}`}>
+          <span className={`dot ${connected ? "dot-connected" : "dot-disconnected"}`} />
+          {connected ? "Connected" : "Disconnected"}
+        </span>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Job ID</th>
+              <th>Title</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id}>
+                <td className="id-cell">{item.id}</td>
+                <td>{item.title}</td>
+                <td><StatusBadge status={item.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
