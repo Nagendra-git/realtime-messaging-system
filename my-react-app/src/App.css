@@ -1,0 +1,7 @@
+.App {
+  background-color: aqua;
+  text-align: left;
+  min-height: 100vh;
+  --text: #6b6375;
+  --text-h: #08060d;
+}
